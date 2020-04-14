@@ -2,29 +2,90 @@
 
 set -e
 
+toLower () {
+	echo ${@}|tr '[:upper:]' '[:lower:]'
+}
+
+toUpper () {
+	echo ${@}|tr '[:lower:]' '[:upper:]'
+}
+
 setupDC () {
 
 	# Set variables
-	DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
-	DOMAINPASS=${DOMAINPASS:-youshouldsetapassword}
-	JOIN=${JOIN:-false}
-	JOINSITE=${JOINSITE:-NONE}
-	MULTISITE=${MULTISITE:-false}
-	NOCOMPLEXITY=${NOCOMPLEXITY:-false}
-	INSECURELDAP=${INSECURELDAP:-false}
-	DNSFORWARDER=${DNSFORWARDER:-NONE}
-	HOSTIP=${HOSTIP:-NONE}
+	readonly DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
+	readonly ADMIN_PASSWORD=${ADMIN_PASSWORD:-youshouldsetapassword}
+	readonly NO_COMPLEXITY=$(toLower ${NO_COMPLEXITY:-false})
+	readonly INSECURE_LDAP=$(toLower ${INSECURE_LDAP:-false})
+	readonly DNS_FORWARDER=${DNS_FORWARDER:-NONE}
+	readonly HOST_IP=${HOST_IP:-NONE}
 	
-	LDOMAIN=${DOMAIN,,}
-	UDOMAIN=${DOMAIN^^}
-	URDOMAIN=${UDOMAIN%%.*}
+	readonly LC_DOMAIN=$(toLower ${DOMAIN})
+	readonly UC_DOMAIN=$(toUpper ${DOMAIN})
+	readonly SUBDOMAIN=${UC_DOMAIN%%.*}
+
+	OTHER_OPTIONS=""
+	if [[ "$HOST_IP" != "NONE" ]]; then
+		OTHER_OPTIONS="--host-ip=$HOST_IP"
+	fi
+	if [[ $DNS_FORWARDER != "NONE" ]]; then
+		OTHER_OPTIONS="${OTHER_OPTIONS} --option='dns forwarder'=${DNS_FORWARDER}"
+	fi
+	if [[ ${INSECURE_LDAP} == "true" ]]; then
+		OTHER_OPTIONS="${OTHER_OPTIONS} --option='ldap server require strong auth'=no"
+	fi
+	readonly OTHER_OPTIONS
+
+	# Only initialize smb.conf if it is not yet there
+	if [[ ! -e /etc/samba/smb.conf ]]; then
+
+		samba-tool domain provision \
+			--targetdir=/samba \
+			--use-rfc2307 \
+			--domain=${SUBDOMAIN} \
+			--realm=${UC_DOMAIN} \
+			--server-role=dc \
+			--dns-backend=SAMBA_INTERNAL \
+			--adminpass=${ADMIN_PASSWORD} \
+			--option='netbios name'=AD_${SUBDOMAIN} \
+			--option='wins support'=yes \
+			--option='winbind nss info'=rfc2307 \
+			--option="idmap config ${UC_DOMAIN}: range"='10000-20000' \
+			--option="idmap config ${UC_DOMAIN}: backend"=ad \
+			${OTHER_OPTIONS}
+		
+		test -e /etc/samba || mkdir /etc/samba
+		ln -s /samba/etc/smb.conf /etc/samba/smb.conf
+		cp -f /samba/private/krb5.conf /etc/krb5.conf
+
+		if [[ ${NO_COMPLEXITY} == "true" ]]; then
+			samba-tool domain passwordsettings set --complexity=off
+			samba-tool domain passwordsettings set --history-length=0
+			samba-tool domain passwordsettings set --min-pwd-age=0
+			samba-tool domain passwordsettings set --max-pwd-age=0
+		fi
+	fi
+	exec samba --interactive
+}
+
+setupJoinDomain () {
+	readonly JOIN=$(toLower ${JOIN:-false})
+	readonly JOINSITE=${JOINSITE:-NONE}
+
+	if [[ ${JOINSITE} == "NONE" ]]; then
+		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL
+	else
+		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL --site=${JOINSITE}
+	fi
 }
 
 case "$1" in
 	start)
 		setupDC
-	else)
+		;;
+	*)
 		exec $@
+		;;
 esac
 
 exit 0

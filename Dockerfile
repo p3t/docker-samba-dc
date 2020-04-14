@@ -1,20 +1,21 @@
-FROM alpine:edge
+FROM alpine:3.11
 
 LABEL org.label-schema.name="Samba AD DC" \
       org.label-schema.description="Docker image for Samba 4 DC on Alpine Linux." \
       org.label-schema.schema-version="1.0"
 
+VOLUME ["/samba"]
+
 COPY . /
 
 # samba-winbind samba-libnss-winbind
-ENV SAMBA_PACKAGES="samba-dc supervisor krb5 chrony"
-ENV WEBMIN_PACKAGES="nginx"
+ENV SAMBA_PACKAGES="samba-dc krb5 chrony"
 
 RUN apk add --no-cache ${SAMBA_PACKAGES} \
-    && mv /etc/samba/smb.conf /etc/samba/smb.conf.orig \
-    chmod a+x entrypoint.sh
-
-# RUN curl -o webmin.tgz https://downloads.sourceforge.net/project/webadmin/webmin/1.941/webmin-1.941.tar.gz
+ && mv /etc/samba /etc/samba.orig \
+ && rm -rf /var/lib/samba \
+ && ln -s /samba /var/lib/samba \
+ && chmod a+x entrypoint.sh
 
 EXPOSE 37/udp \
        53 \
@@ -31,7 +32,6 @@ EXPOSE 37/udp \
        3268/tcp \
        3269/tcp
 
-VOLUME ["/samba"]
 
-ENTRYPOINT [ "entrypoint.sh" ]
+ENTRYPOINT [ "/entrypoint.sh" ]
 CMD [ "start" ]
