@@ -28,6 +28,7 @@ setupDC () {
 	if [[ "$HOST_IP" != "NONE" ]]; then
 		OTHER_OPTIONS="--host-ip=$HOST_IP"
 	fi
+	# Note that the samba-tool automatically adds an exisiting DNS if there is one.
 	if [[ $DNS_FORWARDER != "NONE" ]]; then
 		OTHER_OPTIONS="${OTHER_OPTIONS} --option='dns forwarder'=${DNS_FORWARDER}"
 	fi
@@ -37,7 +38,7 @@ setupDC () {
 	readonly OTHER_OPTIONS
 
 	# Only initialize smb.conf if it is not yet there
-	if [[ ! -e /etc/samba/smb.conf ]]; then
+	if [[ ! -e /samba/etc/smb.conf ]]; then
 
 		samba-tool domain provision \
 			--targetdir=/samba \
@@ -47,7 +48,7 @@ setupDC () {
 			--server-role=dc \
 			--dns-backend=SAMBA_INTERNAL \
 			--adminpass=${ADMIN_PASSWORD} \
-			--option='netbios name'=AD_${SUBDOMAIN} \
+			--option='netbios name'=DC_${SUBDOMAIN} \
 			--option='wins support'=yes \
 			--option='winbind nss info'=rfc2307 \
 			--option="idmap config ${UC_DOMAIN}: range"='10000-20000' \
