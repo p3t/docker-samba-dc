@@ -30,10 +30,11 @@ The priviledged option is not required to run the DC after the setup (once the c
 
 ## Make the controller accessible from the network
 There are multiple options to make a container accessible from the network.
-On option is to start the container in the host-network I decided to use macvlans where
+One option is to start the container in the host-network I decided to use a 
+[macvlan](https://docs.docker.com/network/#8021q-trunked-bridge-example), where
 docker creates a sub-interface of my physical network controller and assigns the container 
-a public ip. Note: You have to make sure, that your DHCP server does not assign IP-addresses
-in the same range as you specify here:
+a public ip. *Note*: You have to make sure, that the IP-addesses in the provided range are
+not in-use (e.g. used by a DHCP server):
 
 ```
 #!/bin/bash
@@ -49,7 +50,7 @@ readonly IPRANGE='192.168.2.192/27'
 # Optional: Add static IP-Address assignments to containers
 readonly AUX_ADDR='host=192.168.2.223'
 
-# 802.1q trunked bridge: https://docs.docker.com/network/#8021q-trunked-bridge-example
+# 802.1q trunked bridge: 
 readonly PARENT=enp2s0.1
 
 docker network create -d macvlan -o parent=${PARENT} \
