@@ -13,7 +13,7 @@ This is a alpine-linux base samba 4 AD DC image.
     docker build -t p3t/samba-dc .
 ```
 
-## Setup a new AD domain controller
+## Initialize domain configuration
 The samba-tool which is used to setup the domain tries to modify the ACL of the sys_vol, which leads to an error,
 when the container is not run with `--privileged=true`.
 The priviledged option is not required to run the DC after the setup (once the config has been created).
@@ -21,11 +21,52 @@ The priviledged option is not required to run the DC after the setup (once the c
 ```
     docker volume create samba
 
-    docker run \
+    docker run --rm \
         --privileged=true \
         --mount source=samba,target=/samba \
         -eDOMAIN=your-domain.local -eNO_COMPLEXITY=true -eADMIN_PASSWORD=<your-pass> \
         p3t/samba-dc setup
+```
+
+## Make the controller accessible from the network
+There are multiple options to make a container accessible from the network.
+On option is to start the container in the host-network I decided to use macvlans where
+docker creates a sub-interface of my physical network controller and assigns the container 
+a public ip. Note: You have to make sure, that your DHCP server does not assign IP-addresses
+in the same range as you specify here:
+
+```
+#!/bin/bash
+
+# This is the subnet-mask and the gateway of the network where your "host" is running in
+readonly SUBNET='192.168.2.0/24'
+readonly GATEWAY='192.168.2.1'
+
+# Reserved range of IP-addresses which can be used by docker
+# Range of 32 addresses: 192.168.2.192 - 192.168.2.223
+readonly IPRANGE='192.168.2.192/27'
+
+# Optional: Add static IP-Address assignments to containers
+readonly AUX_ADDR='host=192.168.2.223'
+
+# 802.1q trunked bridge: https://docs.docker.com/network/#8021q-trunked-bridge-example
+readonly PARENT=enp2s0.1
+
+docker network create -d macvlan -o parent=${PARENT} \
+  --subnet ${SUBNET} \
+  --gateway ${GATEWAY} \
+  --ip-range ${IPRANGE} \
+  macvlan_${PARENT}
+```
+
+## Run the primary domain controller
+
+Example:
+```
+    docker run --rm \
+        -v samba:/samba \
+        --network macvlan_enp2s0.1 \
+        p3t/samba-dc start
 ```
 
 ## Debug/test container
@@ -47,3 +88,7 @@ You can directly start an interactive shell and run the `entrypoint.sh` or parts
 - https://www.samba.org/samba/docs/current/man-html/samba-tool.8.html
 - https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html
 - https://wiki.samba.org/index.php/Active_Directory_Naming_FAQ
+- https://docs.docker.com/network/macvlan/
+
+# Credits
+Thanks to https://github.com/Fmstrat/samba-domain I took this project as initial inspiration.

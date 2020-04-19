@@ -66,12 +66,15 @@ setupDC () {
 			samba-tool domain passwordsettings set --max-pwd-age=0
 		fi
 	fi
-	exec samba --interactive
 }
 
-setupJoinDomain () {
-	readonly JOIN=$(toLower ${JOIN:-false})
+joinDomain () {
+	readonly DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
+	readonly ADMIN_PASSWORD=${ADMIN_PASSWORD:-youshouldsetapassword}
 	readonly JOINSITE=${JOINSITE:-NONE}
+	
+	readonly LC_DOMAIN=$(toLower ${DOMAIN})
+	readonly SUBDOMAIN=${UC_DOMAIN%%.*}
 
 	if [[ ${JOINSITE} == "NONE" ]]; then
 		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL
@@ -80,9 +83,22 @@ setupJoinDomain () {
 	fi
 }
 
+startDC () {
+	exec samba --interactive --configfile=/samba/etc/smb.conf
+}
+
 case "$1" in
-	start)
+	setup)
 		setupDC
+		;;
+	start)
+		startDC
+		;;
+	join)
+		joinDomain
+		;;
+	tool)
+		runSambaTool
 		;;
 	*)
 		exec $@
