@@ -15,6 +15,6 @@ docker network create -d macvlan -o parent=${PARENT} \
   --subnet ${SUBNET} \
   --gateway ${GATEWAY} \
   --ip-range ${IPRANGE} \
-  macvlan_${PARENT}
+  macvlan-${PARENT}
 
 #   --aux-address 'host=192.168.2.223' \
