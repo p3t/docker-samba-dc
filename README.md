@@ -31,33 +31,55 @@ The priviledged option is not required to run the DC after the setup (once the c
 ## Make the controller accessible from the network
 There are multiple options to make a container accessible from the network.
 One option is to start the container in the host-network I decided to use a 
-[macvlan](https://docs.docker.com/network/#8021q-trunked-bridge-example), where
-docker creates a sub-interface of my physical network controller and assigns the container 
-a public ip. *Note*: You have to make sure, that the IP-addesses in the provided range are
+[macvlan](https://docs.docker.com/network/macvlan/). 
+
+*Note*: You have to make sure, that the IP-addesses in the provided range are
 not in-use (e.g. used by a DHCP server):
 
 ```
 #!/bin/bash
+#
+# Creates a docker macvlan - subnet/gateway are the same as your lan settings. 
+# Choose an ip-range not used by DHCP
+# Recomended to read: https://hicu.be/docker-networking-macvlan-bridge-mode-configuration
+#
 
-# This is the subnet-mask and the gateway of the network where your "host" is running in
 readonly SUBNET='192.168.2.0/24'
 readonly GATEWAY='192.168.2.1'
 
-# Reserved range of IP-addresses which can be used by docker
-# Range of 32 addresses: 192.168.2.192 - 192.168.2.223
-readonly IPRANGE='192.168.2.192/27'
+# Range of 4 addresses starting at 192.168.2.160
+readonly START_IP=${1:-192.168.2.160}
+readonly IPRANGE="${START_IP}/30"
+readonly HOST_AUXIP=${3:-$START_IP}
 
-# Optional: Add static IP-Address assignments to containers
-readonly AUX_ADDR='host=192.168.2.223'
+readonly SUBIFNO=${2:-160}
+readonly PARENTIF="enp2s0"
+readonly NETNAME="macvlan-${PARENTIF}"
 
-# 802.1q trunked bridge: 
-readonly PARENT=enp2s0.1
+# Note about 802.1q trunked bridge macvlans: 
+# I assume that you need to have a VLAN capable router or layer-3 switch in order to get it working
+# As I do not have such kind of hardware my containers couldn't connect to the outside world
+# and they where not reachable from anywhere
 
-docker network create -d macvlan -o parent=${PARENT} \
+echo "Creating docker network '${NETNAME}'..."
+
+docker network create -d macvlan -o parent=${PARENTIF} \
   --subnet ${SUBNET} \
   --gateway ${GATEWAY} \
   --ip-range ${IPRANGE} \
-  macvlan_${PARENT}
+  --aux-address "host=${HOST_AUXIP}" \
+  ${NETNAME}
+
+readonly VDEF_NAME="${PARENTIF}.${SUBIFNO}"
+
+echo "Creating sub-dev '${VDEF_NAME}' for host -> macvlan-routing..."
+
+sudo ip link add ${VDEF_NAME} link ${PARENTIF} type macvlan mode bridge
+sudo ip addr add ${HOST_AUXIP}/32 dev ${VDEF_NAME}
+sudo ip link set ${VDEF_NAME} up
+sudo ip route add ${IPRANGE} dev ${VDEF_NAME}
+
+echo "done"
 ```
 
 ## Run the primary domain controller
