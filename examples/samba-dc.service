@@ -1,0 +1,16 @@
+[Unit]
+Description=Samba DC Container
+After=docker.service
+Requires=docker.service
+
+[Service]
+Environment="SECRET=pGNqduRFkB4K9C2vijOmUDa2kPtUhArN"
+TimeoutStartSec=0
+Restart=always
+ExecStartPre=-/usr/bin/docker stop %n
+ExecStartPre=-/usr/bin/docker rm %n
+ExecStartPre=/usr/bin/docker pull p3t/samba-dc
+ExecStart=/usr/bin/docker run --rm --name %n p3t/samba-dc
+
+[Install]
+WantedBy=multi-user.target

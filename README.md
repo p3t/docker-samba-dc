@@ -24,7 +24,10 @@ The priviledged option is not required to run the DC after the setup (once the c
     docker run --rm \
         --privileged=true \
         --mount source=samba,target=/samba \
-        -eDOMAIN=your-domain.local -eNO_COMPLEXITY=true -eADMIN_PASSWORD=<your-pass> \
+        -eDOMAIN=your-domain.local \
+        -eNO_COMPLEXITY=true \
+        -eADMIN_PASSWORD=<your-pass> \
+        -eDNS_FORWARD=192.168.2.1 \
         p3t/samba-dc setup
 ```
 
@@ -41,7 +44,6 @@ not in-use (e.g. used by a DHCP server):
 #
 # Creates a docker macvlan - subnet/gateway are the same as your lan settings. 
 # Choose an ip-range not used by DHCP
-# Recomended to read: https://hicu.be/docker-networking-macvlan-bridge-mode-configuration
 #
 
 readonly SUBNET='192.168.2.0/24'
@@ -86,9 +88,13 @@ echo "done"
 
 Example:
 ```
-    docker run --rm \
+    docker run -d --rm \
         -v samba:/samba \
-        --network macvlan_enp2s0.1 \
+        --network macvlan-enp2s0 \
+        --name sambaDC \
+        --hostname sambaDC \
+        --ip 192.168.2.161 \
+        --mac-address aa:bb:cc:ee:44:55 \
         p3t/samba-dc start
 ```
 
@@ -112,6 +118,7 @@ You can directly start an interactive shell and run the `entrypoint.sh` or parts
 - https://www.samba.org/samba/docs/current/man-html/smb.conf.5.html
 - https://wiki.samba.org/index.php/Active_Directory_Naming_FAQ
 - https://docs.docker.com/network/macvlan/
+- https://hicu.be/docker-networking-macvlan-bridge-mode-configuration
 
 # Credits
 Thanks to https://github.com/Fmstrat/samba-domain I took this project as initial inspiration.

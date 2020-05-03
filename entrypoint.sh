@@ -25,11 +25,11 @@ setupDC () {
 	readonly SUBDOMAIN=${UC_DOMAIN%%.*}
 
 	OTHER_OPTIONS=""
-	if [[ "$HOST_IP" != "NONE" ]]; then
+	if [[ "${HOST_IP}" != "NONE" ]]; then
 		OTHER_OPTIONS="--host-ip=$HOST_IP"
 	fi
 	# Note that the samba-tool automatically adds an exisiting DNS if there is one.
-	if [[ $DNS_FORWARDER != "NONE" ]]; then
+	if [[ "${DNS_FORWARDER}" != "NONE" ]]; then
 		OTHER_OPTIONS="${OTHER_OPTIONS} --option='dns forwarder'=${DNS_FORWARDER}"
 	fi
 	if [[ ${INSECURE_LDAP} == "true" ]]; then
@@ -68,6 +68,7 @@ setupDC () {
 	fi
 }
 
+# untested....
 joinDomain () {
 	readonly DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
 	readonly ADMIN_PASSWORD=${ADMIN_PASSWORD:-youshouldsetapassword}
@@ -83,7 +84,51 @@ joinDomain () {
 	fi
 }
 
-startDC () {
+adjustResolfConf () {
+	readonly IPADDRESS=$(ip route show default | cut -d ' ' -f8 | tail -1)
+	readonly SEARCHREALM=$(echo "\n" | samba-tool testparm --configfile /samba/etc/smb.conf 2>/dev/null | grep realm|cut -d ' ' -f3|tail -1)
+	
+	# Note: 
+	# The first 'nameserver' should be the secondary DC the second 'nameserver' the the primary himself
+	# (for the secondary inverse). FIXME: Support secondary DC
+
+    cat > /etc/resolv.conf << EOF
+search=$(toLower ${SEARCHREALM})
+nameserver=${IPADDRESS}
+EOF
+	echo "[INFO] Adjusted resolv.conf:"
+	cat /etc/resolv.conf
+}
+
+startPrimaryDC () {
+	test -e /etc/samba || mkdir /etc/samba
+	test -e /etc/samba/smb.conf && rm /etc/samba/smb.conf
+	ln -s /samba/etc/smb.conf /etc/samba/smb.conf
+	cp -f /samba/private/krb5.conf /etc/krb5.conf
+
+	cat << 'EOF'
+       _____                          _            ___   ___         
+  _ __|__ / |_   ___   ___ __ _ _ __ | |__  __ _  |   \ / __|        
+ | '_ \|_ \  _| |___| (_-</ _` | '  \| '_ \/ _` | | |) | (__         
+ | .__/___/\__|       /__/\__,_|_|_|_|_.__/\__,_| |___/ \___|        
+ |_|                                                                 
+---------------------------------------------------------------------
+    53   - DNS
+    88   - Kerberos
+    135  - End Point Mapper (DCE/RPC Locator Service)
+    139  - NetBIOS Session
+    389  - LDAP
+    445  - SMB over TCP / CIFS
+    464  - Kerberos Password
+    636  - LDAPS (only if "tls enabled = yes")
+    1024-5000 dynamic RPC-ports
+    3268 - global catalogue
+    3269 - global catalogue SSL
+---------------------------------------------------------------------
+EOF
+	adjustResolfConf
+	echo "\n" | samba-tool testparm --configfile /samba/etc/smb.conf
+
 	exec samba --interactive --configfile=/samba/etc/smb.conf
 }
 
@@ -92,7 +137,7 @@ case "$1" in
 		setupDC
 		;;
 	start)
-		startDC
+		startPrimaryDC
 		;;
 	join)
 		joinDomain
