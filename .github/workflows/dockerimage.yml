@@ -24,14 +24,18 @@ jobs:
 
     - name: Available platforms
       run: echo ${{ steps.buildx.outputs.platforms }}
-
+    
+    - name: login to docker hub
+      run: echo "${{ secrets.DOCKER_HUB_PASS }}" | docker login -u "${{ secrets.DOCKER_HUB_USER }}" --password-stdin
+    
     - name: Run Buildx
       run: |
         docker buildx build \
           --platform linux/386,linux/amd64,linux/arm/v6,linux/arm/v7,linux/arm64 \
-          --output "type=image,push=false" \
-          --file ./Dockerfile .
-#
+          --tag p3tr/samba-dc:latest \
+          --output "type=image,push=true" \
+          --file ./Dockerfile . 
+# 
 #    - name: Customizable Docker Buildx Build
 #      uses: zmingxie/docker_buildx@v1.1
 #      with:
