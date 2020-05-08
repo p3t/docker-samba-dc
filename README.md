@@ -1,8 +1,7 @@
 # Docker container for a Samba 4 active directory domain controller
+![Docker Multiplatform Build](https://github.com/p3t/docker-samba-dc/workflows/Docker%20Image%20CI/badge.svg)
 
 This is a alpine-linux base samba 4 AD DC image.
-[![Docker Automated](https://img.shields.io/docker/cloud/automated/p3tr/samba-dc.svg)](https://hub.docker.com/r/p3tr/samba-dc)
-[![Docker Build](https://img.shields.io/docker/cloud/build/p3tr/samba-dc.svg)](https://hub.docker.com/r/p3tr/samba-dc)
 
 ## Build the container
 
