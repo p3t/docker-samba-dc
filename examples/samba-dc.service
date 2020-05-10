@@ -7,10 +7,11 @@ Requires=docker.service
 Environment="SECRET=pGNqduRFkB4K9C2vijOmUDa2kPtUhArN"
 TimeoutStartSec=0
 Restart=always
+RestartSec=15
 ExecStartPre=-/usr/bin/docker stop %n
 ExecStartPre=-/usr/bin/docker rm %n
 ExecStartPre=/usr/bin/docker pull p3t/samba-dc
-ExecStart=/usr/bin/docker run --rm --name %n p3t/samba-dc
+ExecStart=/usr/bin/docker run --rm --name %n -v samba:/samba --network my-macvlan --ip 192.168.2.161 -mac-address aa:bb:cc:ee:44:55 p3t/samba-dc start
 
 [Install]
 WantedBy=multi-user.target

@@ -9,7 +9,7 @@ This is a alpine-linux base samba 4 AD DC image.
     git clone https://github.com/p3t/docker-samba-dc.git
     cd docker-samba-dc
 
-    docker build -t p3t/samba-dc .
+    docker build -t p3tr/samba-dc .
 ```
 
 ## Initialize domain configuration
@@ -27,7 +27,7 @@ The priviledged option is not required to run the DC after the setup (once the c
         -eNO_COMPLEXITY=true \
         -eADMIN_PASSWORD=<your-pass> \
         -eDNS_FORWARD=192.168.2.1 \
-        p3t/samba-dc setup
+        p3tr/samba-dc setup
 ```
 
 ## Make the controller accessible from the network
@@ -49,11 +49,11 @@ readonly SUBNET='192.168.2.0/24'
 readonly GATEWAY='192.168.2.1'
 
 # Range of 4 addresses starting at 192.168.2.160
-readonly START_IP=${1:-192.168.2.160}
+readonly START_IP=192.168.2.160
 readonly IPRANGE="${START_IP}/30"
-readonly HOST_AUXIP=${3:-$START_IP}
+readonly HOST_AUXIP=$START_IP
 
-readonly SUBIFNO=${2:-160}
+readonly SUBIFNO=160
 readonly PARENTIF="enp2s0"
 readonly NETNAME="macvlan-${PARENTIF}"
 
@@ -94,7 +94,7 @@ Example:
         --hostname sambaDC \
         --ip 192.168.2.161 \
         --mac-address aa:bb:cc:ee:44:55 \
-        p3t/samba-dc start
+        p3tr/samba-dc start
 ```
 
 ## Debug/test container
@@ -106,7 +106,7 @@ You can directly start an interactive shell and run the `entrypoint.sh` or parts
         --privileged=true \
         --mount source=samba,target=/samba \
         -eDOMAIN=your-domain.local -eNO_COMPLEXITY=true -eADMIN_PASSWORD=<your-pass> \
-        p3t/samba-dc ash
+        p3tr/samba-dc ash
 ```
 
 ## References/documentation
