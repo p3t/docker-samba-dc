@@ -5,6 +5,10 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    # * is a special character in YAML so you have to quote this string
+    # Have at least one build per month for up-to-date dependencies
+    - cron:  '1 1 1 * *'
 
 jobs:
 
