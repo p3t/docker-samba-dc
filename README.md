@@ -11,6 +11,10 @@ This is a alpine-linux base samba 4 AD DC image.
 
     docker build -t p3tr/samba-dc .
 ```
+or incase you want to use build-kit:
+```
+    docker buildx build --load -t p3tr/samba-dc .
+```
 
 ## Initialize domain configuration
 The samba-tool which is used to setup the domain tries to modify the ACL of the sys_vol, which leads to an error,
@@ -26,9 +30,10 @@ The priviledged option is not required to run the DC after the setup (once the c
         -eDOMAIN=your-domain.local \
         -eNO_COMPLEXITY=true \
         -eADMIN_PASSWORD=<your-pass> \
-        -eDNS_FORWARD=192.168.2.1 \
+        -eDNS_FORWARD="1.1.1.3 1.0.0.3" \
         p3tr/samba-dc setup
 ```
+
 
 ## Make the controller accessible from the network
 There are multiple options to make a container accessible from the network.

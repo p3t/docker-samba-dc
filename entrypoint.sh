@@ -19,6 +19,7 @@ setupDC () {
 	readonly INSECURE_LDAP=$(toLower ${INSECURE_LDAP:-false})
 	readonly DNS_FORWARDER=${DNS_FORWARDER:-NONE}
 	readonly HOST_IP=${HOST_IP:-NONE}
+#	readonly HOST_NAME=${HOST_NAME:-DC_$RANDOM}
 	
 	readonly LC_DOMAIN=$(toLower ${DOMAIN})
 	readonly UC_DOMAIN=$(toUpper ${DOMAIN})
@@ -41,22 +42,22 @@ setupDC () {
 	if [[ ! -e /samba/etc/smb.conf ]]; then
 
 		samba-tool domain provision \
-			--targetdir=/samba \
-			--use-rfc2307 \
-			--domain=${SUBDOMAIN} \
-			--realm=${UC_DOMAIN} \
 			--server-role=dc \
 			--dns-backend=SAMBA_INTERNAL \
+			--use-rfc2307 \
+			--realm=${UC_DOMAIN} \
+			--domain=${SUBDOMAIN} \
 			--adminpass=${ADMIN_PASSWORD} \
-			--option='netbios name'=DC_${SUBDOMAIN} \
+			--targetdir=/samba \
 			--option='wins support'=yes \
-			--option='winbind nss info'=rfc2307 \
 			--option="idmap config ${UC_DOMAIN}: range"='10000-20000' \
 			--option="idmap config ${UC_DOMAIN}: backend"=ad \
 			${OTHER_OPTIONS}
+#			--option='winbind nss info'=rfc2307 \
+#			--option='netbios name'=DC_${SUBDOMAIN} \
 		
 		test -e /etc/samba || mkdir /etc/samba
-		ln -s /samba/etc/smb.conf /etc/samba/smb.conf
+		ln -sf /samba/etc/smb.conf /etc/samba/smb.conf
 		cp -f /samba/private/krb5.conf /etc/krb5.conf
 
 		if [[ ${NO_COMPLEXITY} == "true" ]]; then
