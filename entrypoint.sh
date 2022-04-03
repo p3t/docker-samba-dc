@@ -10,7 +10,7 @@ toUpper () {
 	echo ${@}|tr '[:lower:]' '[:upper:]'
 }
 
-setupDC () {
+setupPrimaryDC () {
 
 	# Set variables
 	readonly DOMAIN=${DOMAIN:-SAMDOM.LOCAL}
@@ -101,7 +101,7 @@ EOF
 	cat /etc/resolv.conf
 }
 
-startPrimaryDC () {
+runPrimaryDC () {
 	test -e /etc/samba || mkdir /etc/samba
 	test -e /etc/samba/smb.conf && rm /etc/samba/smb.conf
 	ln -s /samba/etc/smb.conf /etc/samba/smb.conf
@@ -133,18 +133,24 @@ EOF
 	exec samba --interactive --configfile=/samba/etc/smb.conf
 }
 
+runSambaTool () {
+	echo "Executing: samba-tool $@"
+	samba-tool $@
+}
+
 case "$1" in
 	setup)
-		setupDC
+		setupPrimaryDC
 		;;
-	start)
-		startPrimaryDC
+	run)
+		runPrimaryDC
 		;;
 	join)
 		joinDomain
 		;;
 	tool)
-		runSambaTool
+	 	shift
+		runSambaTool $@
 		;;
 	*)
 		exec $@

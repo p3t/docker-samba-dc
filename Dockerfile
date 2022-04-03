@@ -1,4 +1,4 @@
-FROM alpine:3.11
+FROM alpine:3.15
 
 LABEL org.label-schema.name="Samba AD DC" \
       org.label-schema.description="Docker image for Samba 4 DC on Alpine Linux." \
