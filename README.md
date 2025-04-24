@@ -43,7 +43,7 @@ One option is to start the container in the host-network I decided to use a
 *Note*: You have to make sure, that the IP-addesses in the provided range are
 not in-use (e.g. used by a DHCP server):
 
-```
+```bash
 #!/bin/bash
 #
 # Creates a docker macvlan - subnet/gateway are the same as your lan settings. 
