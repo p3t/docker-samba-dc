@@ -35,7 +35,9 @@ jobs:
       run: echo ${{ steps.buildx.outputs.platforms }}
     
     - name: login to docker hub
-      run: echo "${{ secrets.DOCKER_HUB_PASS }}" | docker login -u "${{ secrets.DOCKER_HUB_USER }}" --password-stdin
+      run: |
+        echo "${{ secrets.DOCKER_HUB_PASS }}" | docker login -u "${{ secrets.DOCKER_HUB_USER }}" --password-stdin
+        echo "${{ secrets.DOCKER_HUB_USER }}"
     
     - name: Run Buildx
       run: |
