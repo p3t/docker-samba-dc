@@ -33,6 +33,9 @@ jobs:
 
     - name: Available platforms
       run: echo ${{ steps.buildx.outputs.platforms }}
+      
+    - name: Run automated tests
+      run: ./test_replication.sh
     
     - name: login to docker hub
       run: |

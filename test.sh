@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 readonly ADMIN_PASSWORD=${ADMIN_PASSWORD:-youshouldsetapassword}
 
 # Quick test for a running samba container
