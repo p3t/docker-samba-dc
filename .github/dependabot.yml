@@ -1,0 +1,13 @@
+version: 2
+updates:
+  # Keep GitHub Actions up to date
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Keep Docker base images up to date
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
