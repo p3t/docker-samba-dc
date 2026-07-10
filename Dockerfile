@@ -9,7 +9,7 @@ VOLUME ["/samba"]
 COPY . /
 
 # samba-winbind samba-libnss-winbind
-ENV SAMBA_PACKAGES="samba-dc krb5 chrony"
+ENV SAMBA_PACKAGES="samba-dc krb5 chrony samba-client"
 
 RUN apk add --no-cache ${SAMBA_PACKAGES} \
  && mv /etc/samba /etc/samba.orig \

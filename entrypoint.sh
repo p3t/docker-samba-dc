@@ -76,12 +76,13 @@ joinDomain () {
 	readonly JOINSITE=${JOINSITE:-NONE}
 	
 	readonly LC_DOMAIN=$(toLower ${DOMAIN})
+	readonly UC_DOMAIN=$(toUpper ${DOMAIN})
 	readonly SUBDOMAIN=${UC_DOMAIN%%.*}
 
 	if [[ ${JOINSITE} == "NONE" ]]; then
-		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL
+		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL --targetdir=/samba
 	else
-		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL --site=${JOINSITE}
+		samba-tool domain join ${LC_DOMAIN} DC -U"${SUBDOMAIN}\administrator" --password="${ADMIN_PASSWORD}" --dns-backend=SAMBA_INTERNAL --site=${JOINSITE} --targetdir=/samba
 	fi
 }
 
@@ -142,7 +143,7 @@ case "$1" in
 	setup)
 		setupPrimaryDC
 		;;
-	run)
+	run|start)
 		runPrimaryDC
 		;;
 	join)
